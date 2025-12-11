@@ -1,0 +1,175 @@
+\documentclass[14pt,a4paper]{article}
+\usepackage[a4paper, % размер страницы,
+text={180mm, 260mm},% ширина и высота текста,
+left=15mm, top=15mm]{geometry} %размеры пустых полей,
+\usepackage[utf8]{inputenc} %кодировка текста,
+\usepackage{cmap} %кодировка pdf-документа,
+\usepackage[russian]{babel} %поддержка русского языка,
+\usepackage{indentfirst} %корректировка отступов,
+\usepackage{amssymb} %математические символы,
+\usepackage{amsmath} %математические конструкции,
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{afterpage}
+\usepackage{float}
+
+\usepackage[backend=biber,style=gost-numeric]{biblatex}
+\usepackage{xcolor}
+
+\begin{document}
+% Расположение папки проекта: D:\Rozhkova\Projects\DL\Conv_Autoencoder
+Реализована простая модель сверточного автоэнкодера для реконструкции черно-белых изображений.
+
+В качестве входных данных были использованы изображения из датасета "A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection" (Paul Bergmann, Michael Fauser, David Sattlegger, and Carsten Steger, IEEE Conference on Computer Vision and Pattern Recognition, 2019). Для упрощения расчетов разрешение изображений было понижено до [128 128] (исходное разрешение - [1024 1024]). Изображения нормированы в диапазон [0, 1]. Модель обучалась на примерах «нормальных» данных (без дефектов). 
+
+Модель реализована на языке MATLAB с использованием пакета "Deep Learning Toolbox". 
+
+Модель представляет собой сверточный автоэнкодер с пятью сверточными слоями в кодере и пятью зеркальными повышающими свертками в декодере. Повышающие свертки в декодере реализованы в виде комбинации слоев resize2dLayer с билинейной интерполяцией и convolution2dLayer. После каждого слоя свертки был поставлен слой maxPooling с ядром размера 2. 
+
+В качестве функции активации была использована функция leakyRelu (scale = 0.01). 
+Целевой функцией  было выбрано среднеквадратичное отклонение (mse(target, item)) между исходным изображением и реконструированным из латентного пространства. Размерность латентного пространства: 128.
+
+Параметры обучения модели: 
+\begin{itemize}
+	\item Количество изображений для обучения: 320
+	\item Количество эпох обучения: 80
+	\item Learning rate: 0.001
+\end{itemize}
+Сравнительный анализ работы модели при различных значениях гипермараметров проведен не был.
+
+Схема архитектуры модели приведена на рис. ~\ref{fig:neteinfo2}, \ref{fig:netdinfo2}
+
+\newpage
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/netE_info2}
+	\caption{Архитектура кодера}
+	\label{fig:neteinfo2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/netD_info2}
+	\caption{Архитектура декодера}
+	\label{fig:netdinfo2}
+\end{figure}
+\newpage
+
+
+\section{Результаты} 
+
+Время обучения модели: 29 минут 31 секунда.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/Learning_Graph.png}
+	\caption{Прогресс обучения}
+	\label{fig:learning_rate}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/Reconstructed_images}
+	\caption{Реконструированные изображения}
+	\label{fig:reconstructed}
+\end{figure}
+
+\newpage
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/Latent_vector_histograms.pdf}
+	\caption{}
+	\label{fig:latent_vector_distribution}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/Error_map_example}
+	\caption{Пример карты ошибок}
+	\label{fig:error_map}
+\end{figure}
+
+На рис.~\ref{fig:reconstructed} видно, что реконструированные изображения сохраняют ориентацию исходного изображения. Также улавливается направление освещения. Информация о винтовой части детали в процессе обучения теряется. На рис. ~\ref{fig:latent_vector_distribution} изображено распределение значений латентного вектора модели. Очевидных связей с какими-либо признаками исходных изображений не обнаружено. Вопрос требует дополнительных исследований.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/Error_histograms.pdf}
+	\caption{}
+	\label{fig:error_hist}
+\end{figure}
+
+Средние ошибки реконструкции тестовых данных лежат в диапазоне между 0.06 - 0.065. Однако максимальные ошибки реконструкции довольно значительны: нижняя граница на уровне 0.28, верхняя - 0.4.
+
+\newpage
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/E11}
+		\caption{Кодер}
+		\label{fig:E11}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/D51}
+		\caption{Декодер}
+		\label{fig:D51}
+	\end{subfigure}
+	\caption{Активации первого слоя Кодера и последнего слоя декодера}
+	\label{fig:E11D51}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/E21}
+		\caption{Кодер}
+		\label{fig:E21}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/D41}
+		\caption{Декодер}
+		\label{fig:D41}
+	\end{subfigure}
+	\caption{Активации второго слоя Кодера и четвертого слоя декодера}
+	\label{fig:E21D41}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/E31}
+		\caption{Кодер}
+		\label{fig:E31}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{../../Conv_Autoencoder/Output_2/Pictures/D31}
+		\caption{Декодер}
+		\label{fig:D31}
+	\end{subfigure}
+	\caption{Активации третьего слоя Кодера и третьего слоя декодера}
+	\label{fig:E31D31}
+\end{figure}
+\newpage
+
+\section{Задачи для дальнейшей работы} 
+На текущем этапе проверка работы модели на "дефектных" данных невозможна в силу малой точности реконструкции входных изображений. 
+
+\begin{enumerate}
+	\item Изучение влияния значений гиперпараметров на работу модели
+	\item Изучение связи между признаками объектов на изображениях и формой латентного пространства
+	\item Повышение точности работы модели
+	\item Расширение модели до Variational Autoencoder
+\end{enumerate}
+
+
+\end{document}
+
+
+
