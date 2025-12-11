@@ -4,6 +4,27 @@ data/
 checkpoints/
 runs/
 VAE_runs/
-output/
-*.asv
+
 *.nb
+*.asv
+
+# LaTeX auxiliary files
+*.aux
+*.synctex.gz
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.run.xml
+*.bcf
+*.blg
+*.bbl
+*.nav
+*.snm
+*.vrb
+
+# Editor files
+*.swp
+*~
+.vscode/
