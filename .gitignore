@@ -7,6 +7,7 @@ VAE_runs/
 
 *.nb
 *.asv
+*.mat
 
 # LaTeX auxiliary files
 *.aux
