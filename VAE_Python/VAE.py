@@ -23,23 +23,17 @@ class VAE(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
-            nn.Conv2d(64, 128, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),
             nn.Flatten(),
         )
 
-        self.mean_layer = nn.Linear(2048, latent_size)
-        self.log_var_layer = nn.Linear(2048, latent_size)
+        self.mean_layer = nn.Linear(4096, latent_size)
+        self.log_var_layer = nn.Linear(4096, latent_size)
 
         self.decoder = nn.Sequential(
-            nn.Linear(latent_size, 2048),
-            nn.Unflatten(1,(128,4,4)),
-            nn.ConvTranspose2d(128,64,2,2,0),
-            nn.Conv2d(64,64,3,1,1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 2, 2, 0),
-            nn.Conv2d(32, 32, 3, 1, 1),
+            nn.Linear(latent_size, 4096),
+            nn.Unflatten(1,(64,8,8)),
+            nn.ConvTranspose2d(64,32,2,2,0),
+            nn.Conv2d(32,32,3,1,1),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 16, 2, 2, 0),
             nn.Conv2d(16, 16, 3, 1, 1),
