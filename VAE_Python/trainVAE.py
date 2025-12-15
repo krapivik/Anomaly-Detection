@@ -1,9 +1,10 @@
 import torch.optim as optim
-from VAE import VAE, KLDLoss
+from VAE import VAE, KLDLoss, VAEConfig
 from StepByStep import VAEStepByStep
 
-latent_size=128
-model = VAE(input_size=1,latent_size=latent_size)
+
+config = VAEConfig(latent_dim = 128)
+model = VAE(config)
 loss_fn = KLDLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
