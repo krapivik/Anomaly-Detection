@@ -146,14 +146,14 @@ class StepByStep(object):
         plt.show()
         return fig
 
-    def show_reconstruction(self, image):
+    def show_reconstruction(self, image): # image - тензор [1,1,128,128]
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle('Reconstruction')
         image2show = image.squeeze(0)
         ax1.imshow(image2show, cmap='gray')
 
-        image2reconstruct = image.unsqueeze(0)
-        reconstructed_image = self.model.forward(image2reconstruct).squeeze().detach()
+        image2reconstruct = image
+        reconstructed_image = self.predict(image2reconstruct).squeeze().detach()
         ax2.imshow(reconstructed_image, cmap='gray')
         plt.show()
 
@@ -164,7 +164,7 @@ class StepByStep(object):
         image2show = image.squeeze(0)
         ax1.imshow(image2show, cmap='gray')
         image2reconstruct = image.unsqueeze(0)
-        reconstructed_image = self.model.forward(image2reconstruct).squeeze().detach()
+        reconstructed_image = self.predict(image2reconstruct).squeeze().detach()
         ax2.imshow(reconstructed_image, cmap='gray')
 
         error = abs(reconstructed_image - image2show)
