@@ -147,7 +147,7 @@ class StepByStep(object):
     def show_reconstruction(self, image): # image - тензор [1,1,128,128]
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle('Reconstruction')
-        image2show = image.squeeze(0)
+        image2show = image.squeeze()
         ax1.imshow(image2show, cmap='gray')
 
         image2reconstruct = image

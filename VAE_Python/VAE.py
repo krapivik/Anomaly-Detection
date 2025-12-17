@@ -90,17 +90,18 @@ class Decoder(nn.Module):
         )
 
         self.conv1 = nn.Sequential(
-            nn.ConvTranspose2d(64,32,2,2,0),
-            nn.Conv2d(32,32,3,1,1),
+            nn.Upsample(scale_factor=2, mode='bilinear',align_corners=False),
+            nn.Conv2d(64,32,3,1,1),
             nn.ReLU(),)
         self.conv2 = nn.Sequential(
-            nn.ConvTranspose2d(32,16,2,2,0),
-            nn.Conv2d(16, 16, 3, 1, 1),
+            # nn.ConvTranspose2d(32,16,2,2,0),
+            nn.Upsample(scale_factor=2, mode='bilinear',align_corners=False),
+            nn.Conv2d(32, 16, 3, 1, 1),
             nn.ReLU(),
         )
         self.conv3 = nn.Sequential(
-            nn.ConvTranspose2d(16, 8, 2, 2, 0),
-            nn.Conv2d(8, 8, 3, 1, 1),
+            nn.Upsample(scale_factor=2, mode='bilinear',align_corners=False),
+            nn.Conv2d(16, 8, 3, 1, 1),
             nn.ReLU(),
         )
         self.conv4 = nn.Sequential(
