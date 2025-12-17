@@ -1,12 +1,10 @@
 import numpy as np
 import datetime
 import torch
-from torch.nn import MSELoss
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from VAE import KLDLoss, AnnealingKLDLoss
 
 class StepByStep(object):
     def __init__(self, model, loss_fn, optimizer):
@@ -40,7 +38,7 @@ class StepByStep(object):
             self.model.to(self.device)
         except RuntimeError:
             self.device = ('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f"Couldn't send it to {device}, \ sending it to {self.device} instead.")
+        print(f"Couldn't send it to {device}, / sending it to {self.device} instead.")
         self.model.to(self.device)
 
     def _set_loaders(self, train_loader, test_loader):

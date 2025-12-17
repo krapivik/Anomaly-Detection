@@ -89,7 +89,8 @@ class Decoder(nn.Module):
             nn.Unflatten(1, hidden_shape)
         )
 
-        self.conv1 = nn.Sequential(nn.ConvTranspose2d(64,32,2,2,0),
+        self.conv1 = nn.Sequential(
+            nn.ConvTranspose2d(64,32,2,2,0),
             nn.Conv2d(32,32,3,1,1),
             nn.ReLU(),)
         self.conv2 = nn.Sequential(
@@ -123,7 +124,6 @@ class VAE(nn.Module):
         self.config = configuration
         self.encoder = Encoder(configuration)
         self.decoder = Decoder(configuration)
-
 
     def forward(self, x):
         mean, log_var = self.encoder(x)
