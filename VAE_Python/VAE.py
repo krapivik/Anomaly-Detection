@@ -132,7 +132,8 @@ class VAE(nn.Module):
         x_hat = self.decoder(z)
         return x_hat, mean, log_var
 
-    def _log2std(self,log_var):
+    @staticmethod
+    def _log2std(log_var):
         std = torch.exp(0.5 * log_var)
         return std
 
@@ -160,7 +161,8 @@ class KLDLoss(nn.Module):
         loss = reconstruction_loss + beta * kld
         return loss, reconstruction_loss, kld
 
-    def _compute_kl_loss(self, mean, log_var):
+    @staticmethod
+    def _compute_kl_loss(mean, log_var):
         kld = torch.mean(- 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp(), dim=1))
         return kld
 
@@ -178,14 +180,15 @@ class AnnealingKLDLoss(nn.Module):
         loss = reconstruction_loss + beta * kld
         return loss, reconstruction_loss, kld
 
-    def _compute_kl_loss(self, mean, log_var):
+    @staticmethod
+    def _compute_kl_loss(mean, log_var):
         kld = torch.mean(- 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp(), dim=1))
         return kld
 
 
-config = VAEConfig(latent_dim=128)
-model = VAE(config)
-print("=== ИНФОРМАЦИЯ О СЕТИ ===")
-summary(model, input_size=config.input_shape)  # (каналы, высота, ширина)
+# config = VAEConfig(latent_dim=128)
+# model = VAE(config)
+# print("=== ИНФОРМАЦИЯ О СЕТИ ===")
+# summary(model, input_size=config.input_shape)  # (каналы, высота, ширина)
 
 

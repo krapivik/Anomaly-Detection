@@ -1,10 +1,11 @@
 from VAE import VAE, KLDLoss,VAEConfig
 from StepByStep import StepByStep, VAEStepByStep
 import torch.optim as optim
-import numpy as np
-filename = 'checkpoints\\VAE'
+import matplotlib.pyplot as plt
 
-config = VAEConfig(latent_dim=128)
+filename = 'checkpoints\\model_17122925'
+
+config = VAEConfig(latent_dim=64)
 model = VAE(config)
 loss_fn = KLDLoss()
 optimizer = optim.Adam(model.parameters())
@@ -15,6 +16,14 @@ train_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\
 test_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\screw\\test'
 sbs.prepare_data(train_data_folder, test_data_folder, batch_size=32)
 
-image, label = sbs.test_loader.dataset.__getitem__(80)
-image = image.unsqueeze(0)
-sbs.show_reconstruction(image)
+# for name, module in model.named_modules():
+#     print(name)
+
+
+fig=sbs.visualize_filters('encoder.conv2.0')
+plt.show()
+
+# print(getattr(model,'encoder'))
+# image, label = sbs.test_loader.dataset.__getitem__(80)
+# image = image.unsqueeze(0)
+# sbs.show_reconstruction(image)

@@ -1,6 +1,7 @@
 import numpy as np
 import datetime
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
@@ -28,6 +29,10 @@ class StepByStep(object):
 
         # Functions
         self.train_step_fn = self._make_train_step_fn()
+
+        # for visualization
+        self.visualization = None
+        self.handles = {}
 
     def to(self, device):
         # This method allows the user to specify a different device
@@ -144,6 +149,84 @@ class StepByStep(object):
         plt.show()
         return fig
 
+    @staticmethod
+    def _visualize_tensors(axs, x, y=None, yhat=None, layer_name='', title=None):
+        n_images = len(axs)
+        minv, maxv = np.min(x[:n_images]), np.max(x[:n_images])
+        for j, image in enumerate(x[:n_images]):
+            ax = axs[j]
+            if title is not None:
+                ax.set_title(f'{title} #{j}', fontsize=12)
+            shp = np.atleast_2d(image).shape
+            ax.set_ylabel(f'{layer_name}\n{shp[0]}x{shp[1]}', rotation=0, labelpad=40)
+            xlabel1 = '' if y is None else f'\nLabel: {y[j]}'
+            xlabel2 = '' if yhat is None else f'\nPredicted: {yhat[j]}'
+            xlabel = f'{xlabel1}{xlabel2}'
+            if len(xlabel):
+                ax.set_xlabel(xlabel, fontsize=12)
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            ax.imshow(np.atleast_2d(image.squeeze()), cmap='gray', vmin=minv, vmax=maxv)
+        return
+
+    def visualize_filters(self, layer_name, **kwargs):
+        try:
+            layer = self.model
+            for name in layer_name.split('.'):
+                layer = getattr(layer, name)
+
+            if isinstance(layer, nn.Conv2d):
+                weights = layer.weight.data.cpu().numpy()
+                n_filters, n_channels, _, _ = weights.shape
+
+                size = (2 * n_channels + 2, 2 * n_filters)
+                fig, axes = plt.subplots(n_filters, n_channels, figsize=size)
+                axes = np.atleast_2d(axes)
+                axes = axes.reshape(n_filters, n_channels)
+
+                for i in range(n_filters):
+                    StepByStep._visualize_tensors(
+                        axes[i, :],
+                        weights[i],
+                        layer_name=f'Filter #{i}',
+                        title='Channel'
+                    )
+
+                    # for ax in axes.flat:
+                    #     ax.label_outer()
+
+                fig.tight_layout()
+                return fig
+        except AttributeError:
+            return
+
+    def attach_hooks(self, layers_to_hook, hook_fn=None):
+        self.visualization = {}
+        modules = list(self.model.named_modules())
+        layer_names = {layer: name for name, layer in modules[1:]}
+
+        if hook_fn is not None:
+            def hook_fn(layer, inputs, outputs):
+                name = layer_names[layer]
+                values = outputs.detach().cpu().numpy()
+                if self.visualization[name] is None:
+                    self.visualization[name] = values
+                else:
+                    self.visualization[name] = np.concatenate((self.visualization[name], values))
+
+            for name, layer in modules[1:]:
+                if name in layers_to_hook:
+                    self.visualization[name] = None
+                    self.handles[name] = layer.register_forward_hook(hook_fn)
+
+    def remove_hooks(self):
+        for handle in self.handles.values():
+            handle.remove()
+            self.handles = {}
+
+    def visualize_outputs(self, layers, n_images = 10, y=None, yhat=None):
+        pass
     def show_reconstruction(self, image): # image - тензор [1,1,128,128]
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle('Reconstruction')
