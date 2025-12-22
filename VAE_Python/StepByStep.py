@@ -199,14 +199,13 @@ class StepByStep(object):
                 fig.tight_layout()
                 return fig
         except AttributeError:
-            return
+            return None
 
     def attach_hooks(self, layers_to_hook, hook_fn=None):
         self.visualization = {}
         modules = list(self.model.named_modules())
         layer_names = {layer: name for name, layer in modules[1:]}
-
-        if hook_fn is not None:
+        if hook_fn is None:
             def hook_fn(layer, inputs, outputs):
                 name = layer_names[layer]
                 values = outputs.detach().cpu().numpy()
@@ -215,10 +214,10 @@ class StepByStep(object):
                 else:
                     self.visualization[name] = np.concatenate((self.visualization[name], values))
 
-            for name, layer in modules[1:]:
-                if name in layers_to_hook:
-                    self.visualization[name] = None
-                    self.handles[name] = layer.register_forward_hook(hook_fn)
+        for name, layer in modules[1:]:
+            if name in layers_to_hook:
+                self.visualization[name] = None
+                self.handles[name] = layer.register_forward_hook(hook_fn)
 
     def remove_hooks(self):
         for handle in self.handles.values():
