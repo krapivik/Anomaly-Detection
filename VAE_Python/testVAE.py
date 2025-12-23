@@ -1,5 +1,5 @@
 from VAE import VAE, KLDLoss,VAEConfig
-from StepByStep import StepByStep, VAEStepByStep
+from StepByStep import VAEStepByStep
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
@@ -16,14 +16,13 @@ train_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\
 test_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\screw\\test'
 sbs.prepare_data(train_data_folder, test_data_folder, batch_size=32)
 
-# for name, module in model.named_modules():
-#     print(name)
+images_batch, labels_batch = next(iter(sbs.test_loader))
+sbs.attach_hooks(['encoder.conv1','encoder.conv2'])
+logits = sbs.predict(images_batch)
+sbs.remove_hooks()
 
-
-fig=sbs.visualize_filters('encoder.conv2.0')
+# # fig=sbs.visualize_filters('encoder.conv2.0')
+fig = sbs.visualize_outputs(['encoder.conv1'],n_images=1)
 plt.show()
 
-# print(getattr(model,'encoder'))
-# image, label = sbs.test_loader.dataset.__getitem__(80)
-# image = image.unsqueeze(0)
 # sbs.show_reconstruction(image)
