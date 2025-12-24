@@ -255,6 +255,19 @@ class StepByStep(object):
         plt.tight_layout()
         return fig
 
+    @staticmethod
+    def statistic_per_channel(images):
+        n_samples, n_channels, n_height, n_weight = images.shape
+        flatten_per_channel = images.reshape(n_samples, n_channels, -1)
+
+        means = flatten_per_channel.mean(axis=2)
+        stds = flatten_per_channel.std(axis=2)
+
+        sum_means = means.sum(axis=0)
+        sum_stds = stds.sum(axis=0)
+
+        return sum_means,sum_stds
+
     def show_reconstruction(self, image): # image - тензор [1,1,128,128]
         fig, (ax1, ax2) = plt.subplots(1, 2)
         fig.suptitle('Reconstruction')

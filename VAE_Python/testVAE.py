@@ -17,12 +17,19 @@ test_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\s
 sbs.prepare_data(train_data_folder, test_data_folder, batch_size=32)
 
 images_batch, labels_batch = next(iter(sbs.test_loader))
-sbs.attach_hooks(['encoder.conv1','encoder.conv2'])
+layers_to_featurize = ['encoder.conv1','encoder.conv2','encoder.conv3', 'encoder.conv4',
+                       'encoder.mean_layer', 'encoder.log_var_layer',
+                  'decoder.conv1','decoder.conv2','decoder.conv3','decoder.conv4', 'decoder.unflat']
+sbs.attach_hooks(layers_to_featurize)
 logits = sbs.predict(images_batch)
 sbs.remove_hooks()
 
-# # fig=sbs.visualize_filters('encoder.conv2.0')
-fig = sbs.visualize_outputs(['encoder.conv1'],n_images=1)
-plt.show()
+
+# print(sbs.visualization['encoder.conv1'])
+means, stds =sbs.statistic_per_channel(sbs.visualization['encoder.conv4'])
+# for layer in layers_to_featurize:
+#     fig = sbs.visualize_outputs([layer],n_images=5)
+#     layer = layer.replace('.', '_')
+#     fig.savefig(f'output\\feature_maps_23122025_no_batchnorm\\{layer}.jpg')
 
 # sbs.show_reconstruction(image)

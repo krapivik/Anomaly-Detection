@@ -128,7 +128,7 @@ class VAE(nn.Module):
 
     def forward(self, x):
         mean, log_var = self.encoder(x)
-        z = self.reparametrisation(mean,log_var)
+        z = VAE.reparametrisation(mean,log_var)
         x_hat = self.decoder(z)
         return x_hat, mean, log_var
 
@@ -137,8 +137,9 @@ class VAE(nn.Module):
         std = torch.exp(0.5 * log_var)
         return std
 
-    def reparametrisation(self, mean, log_var):
-        std = self._log2std(log_var)
+    @staticmethod
+    def reparametrisation(mean, log_var):
+        std = VAE._log2std(log_var)
         epsilon = torch.randn_like(log_var)
         z = mean + std * epsilon
         return z
@@ -157,7 +158,7 @@ class KLDLoss(nn.Module):
     def forward(self, prediction, target, mean, log_var):
         reconstruction_loss = self.mse(prediction, target)
         beta = 1
-        kld = self._compute_kl_loss(mean, log_var)
+        kld = KLDLoss._compute_kl_loss(mean, log_var)
         loss = reconstruction_loss + beta * kld
         return loss, reconstruction_loss, kld
 
@@ -176,7 +177,7 @@ class AnnealingKLDLoss(nn.Module):
     def forward(self, prediction, target, mean, log_var, num_epoch):
         reconstruction_loss = self.mse(prediction, target)
         beta =  min(1.0, num_epoch / 20)
-        kld = self._compute_kl_loss(mean, log_var)
+        kld = AnnealingKLDLoss._compute_kl_loss(mean, log_var)
         loss = reconstruction_loss + beta * kld
         return loss, reconstruction_loss, kld
 
