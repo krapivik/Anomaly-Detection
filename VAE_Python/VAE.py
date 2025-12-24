@@ -155,41 +155,27 @@ class KLDLoss(nn.Module):
         super(KLDLoss, self).__init__()
         self.mse = nn.MSELoss(reduction='sum')
 
-    def forward(self, prediction, target, mean, log_var):
+    def forward(self, prediction, target, mean, log_var, num_epoch = None, kld_epoch = None):
+        '''
+        num_epoch - номер текущей эпохи
+        kld_epoch - номер эпохи, начиная с которой усиливается влияние kld в функции потерь
+        '''
         reconstruction_loss = self.mse(prediction, target)
-        beta = 1
-        kld = KLDLoss._compute_kl_loss(mean, log_var)
-        loss = reconstruction_loss + beta * kld
+        kld = KLDLoss.compute_kl_loss(mean, log_var)
+        if kld_epoch is not None and num_epoch is not None:
+            beta = min(1.0, num_epoch / kld_epoch)
+            loss = reconstruction_loss + beta * kld
+        else:
+            beta = 1
+            loss = reconstruction_loss + beta * kld
         return loss, reconstruction_loss, kld
 
     @staticmethod
-    def _compute_kl_loss(mean, log_var):
+    def compute_kl_loss(mean, log_var):
         kld = torch.mean(- 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp(), dim=1))
         return kld
-
-# Создаем виртуальный класс VAE_Loss
-# Создаем дочерние классы VAE_Loss под конкретные реализации функций ошибки
-class AnnealingKLDLoss(nn.Module):
-    def __init__(self):
-        super(AnnealingKLDLoss, self).__init__()
-        self.mse = nn.MSELoss(reduction='sum')
-
-    def forward(self, prediction, target, mean, log_var, num_epoch):
-        reconstruction_loss = self.mse(prediction, target)
-        beta =  min(1.0, num_epoch / 20)
-        kld = AnnealingKLDLoss._compute_kl_loss(mean, log_var)
-        loss = reconstruction_loss + beta * kld
-        return loss, reconstruction_loss, kld
-
-    @staticmethod
-    def _compute_kl_loss(mean, log_var):
-        kld = torch.mean(- 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp(), dim=1))
-        return kld
-
 
 # config = VAEConfig(latent_dim=128)
 # model = VAE(config)
 # print("=== ИНФОРМАЦИЯ О СЕТИ ===")
 # summary(model, input_size=config.input_shape)  # (каналы, высота, ширина)
-
-
