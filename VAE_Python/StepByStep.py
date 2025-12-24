@@ -25,10 +25,12 @@ class StepByStep(object):
 
         # Variables
         self.losses = []
+        self.test_losses=[]
         self.total_epochs = 0
 
         # Functions
         self.train_step_fn = self._make_train_step_fn()
+        self.test_step_fn = self._make_test_step_fn()
 
         # for visualization
         self.visualization = None
@@ -81,9 +83,21 @@ class StepByStep(object):
             return loss.item()
         return perform_train_step_fn
 
-    def _mini_batch(self):
-        data_loader=self.train_loader
-        step_fn=self._make_train_step_fn()
+    def _make_test_step_fn(self):
+        def perform_test_step_fn(image: torch.Tensor):
+            self.model.eval()
+            reconstructed_image = self.model(image)
+            loss = self.loss_fn(reconstructed_image, image)
+            return loss.item()
+        return perform_test_step_fn
+
+    def _mini_batch(self, validation=False):
+        if validation:
+            data_loader = self.test_loader
+            step_fn = self.test_step_fn
+        else:
+            data_loader=self.train_loader
+            step_fn=self.train_step_fn
         mini_batch_losses = []
         for (image_batch, target) in data_loader:
             image_batch = image_batch.to(device=self.device)
@@ -102,6 +116,10 @@ class StepByStep(object):
             self.total_epochs += 1
             loss = self._mini_batch()
             self.losses.append(loss)
+
+            with torch.no_grad():
+                test_loss = self._mini_batch(validation=True)
+                self.test_losses.append(test_loss)
 
             if self.writer is not None:
                 self.writer.add_scalar('Loss/train', loss.item(), epoch)
@@ -307,9 +325,21 @@ class VAEStepByStep(StepByStep):
             return loss.item(), reconstruction_loss.item(), kld.item()
         return perform_train_step_fn
 
-    def _mini_batch(self):
-        data_loader=self.train_loader
-        step_fn=self._make_train_step_fn()
+    def _make_test_step_fn(self):
+        def perform_train_step_fn(image: torch.Tensor):
+            self.model.eval()
+            reconstructed_image, mean, log_var = self.model(image)
+            loss, reconstruction_loss, kld = self.loss_fn(reconstructed_image, image, mean, log_var)
+            return loss.item(), reconstruction_loss.item(), kld.item()
+        return perform_train_step_fn
+
+    def _mini_batch(self, validation = False):
+        if validation:
+            data_loader = self.test_loader
+            step_fn = self.test_step_fn
+        else:
+            data_loader=self.train_loader
+            step_fn=self.train_step_fn
         mini_batch_losses = []
         mini_batch_reconstruction_losses = []
         mini_batch_klds = []
