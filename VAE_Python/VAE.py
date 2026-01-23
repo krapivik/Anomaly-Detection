@@ -150,6 +150,12 @@ class VAE(nn.Module):
         image = image_tensor.detach().cpu().numpy()
         return image
 
+    def plot_latent_statistics(self, image):
+        with torch.no_grad():
+            encoded = self.encoder(image)
+
+        pass
+
 class KLDLoss(nn.Module):
     def __init__(self):
         super(KLDLoss, self).__init__()

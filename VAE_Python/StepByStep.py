@@ -20,17 +20,17 @@ class StepByStep(object):
         self.model.to(self.device)
 
         self.train_loader = None
-        self.test_loader = None
+        self.val_loader = None
         self.writer = None
 
         # Variables
         self.losses = []
-        self.test_losses=[]
+        self.val_losses=[]
         self.total_epochs = 0
 
         # Functions
         self.train_step_fn = self._make_train_step_fn()
-        self.test_step_fn = self._make_test_step_fn()
+        self.val_step_fn = self._make_val_step_fn()
 
         # for visualization
         self.visualization = None
@@ -48,11 +48,11 @@ class StepByStep(object):
         print(f"Couldn't send it to {device}, / sending it to {self.device} instead.")
         self.model.to(self.device)
 
-    def _set_loaders(self, train_loader, test_loader):
+    def _set_loaders(self, train_loader, val_loader = None):
         self.train_loader = train_loader
-        self.test_loader = test_loader
+        self.val_loader = val_loader
 
-    def prepare_data(self,train_data_folder_pass, test_data_folder_pass, batch_size):
+    def prepare_data(self,train_data_folder_pass, val_data_folder_pass, batch_size):
         transform = transforms.Compose([
             transforms.Grayscale(num_output_channels=1),  # явно указываем 1 канал
             transforms.Resize((128, 128)),  # изменяем размер
@@ -60,10 +60,10 @@ class StepByStep(object):
 
         train_dataset = datasets.ImageFolder(root=train_data_folder_pass, transform=transform)
 
-        test_dataset = datasets.ImageFolder(root=test_data_folder_pass, transform=transform)
+        val_dataset = datasets.ImageFolder(root=val_data_folder_pass, transform=transform)
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
         self._set_loaders(train_loader, test_loader)
 
     def set_tensorboard(self, name, folder='runs'):
@@ -83,7 +83,7 @@ class StepByStep(object):
             return loss.item()
         return perform_train_step_fn
 
-    def _make_test_step_fn(self):
+    def _make_val_step_fn(self):
         def perform_test_step_fn(image: torch.Tensor):
             self.model.eval()
             reconstructed_image = self.model(image)
@@ -93,11 +93,15 @@ class StepByStep(object):
 
     def _mini_batch(self, validation=False):
         if validation:
-            data_loader = self.test_loader
-            step_fn = self.test_step_fn
+            data_loader = self.val_loader
+            step_fn = self.val_step_fn
         else:
             data_loader=self.train_loader
             step_fn=self.train_step_fn
+
+        if data_loader is None:
+            return None
+
         mini_batch_losses = []
         for (image_batch, target) in data_loader:
             image_batch = image_batch.to(device=self.device)
@@ -110,22 +114,30 @@ class StepByStep(object):
         print(f'Epoch: {self.total_epochs} | Loss: {loss.item():.4f}')
 
     def train(self,n_epochs):
-        image, label = self.test_loader.dataset.__getitem__(0)
+        # Изображение для демонстрации работы модели на каждом шаге:
+        image, label = self.val_loader.dataset.__getitem__(0)
         image=image.unsqueeze(0)
+
         for epoch in range(n_epochs):
             self.total_epochs += 1
-            loss = self._mini_batch()
+            loss = self._mini_batch(validation=False)
             self.losses.append(loss)
 
+            # ВАЛИДАЦИЯ
             with torch.no_grad():
-                test_loss = self._mini_batch(validation=True)
-                self.test_losses.append(test_loss)
+                val_loss = self._mini_batch(validation=True)
+                self.val_losses.append(val_loss)
 
             if self.writer is not None:
-                self.writer.add_scalar('Loss/train', loss.item(), epoch)
+                scalars = {'training': loss}
+                if val_loss is not None:
+                    scalars.update({'validation': val_loss})
+                self.writer.add_scalars(main_tag='loss',
+                                        tag_scalars=scalars,
+                                        global_step=epoch)
 
                 reconstructed_image = self.predict(image).squeeze(0)
-                self.writer.add_image(f'Images/test_image', reconstructed_image, epoch)
+                self.writer.add_image(f'Images/reconstructed', reconstructed_image, epoch)
 
                 for name,param in self.model.named_parameters():
                     self.writer.add_histogram(f'Parameters/{name}', param.data, epoch)
@@ -137,10 +149,13 @@ class StepByStep(object):
             self.writer.flush()
 
     def save_checkpoint(self, filename):
-        checkpoint = {'epoch': self.total_epochs,
-        'model_state_dict': self.model.state_dict(),
-        'optimizer_state_dict': self.optimizer.state_dict(),
-        'loss': self.losses}
+        checkpoint = {
+            'epoch': self.total_epochs,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'loss': self.losses,
+            'val_loss': self.val_losses
+        }
         torch.save(checkpoint, filename)
 
     def load_checkpoint(self, filename):
@@ -149,18 +164,23 @@ class StepByStep(object):
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.total_epochs = checkpoint['epoch']
         self.losses = checkpoint['loss']
+        self.val_losses = checkpoint['val_loss']
+        self.model.train()
 
     def predict (self, image):
         self.model.eval()
-        # image_tensor =  torch.as_tensor(image)
+        # image_tensor =  torch.as_tensor(image) #Если вход - массив numpy
         reconstructed_image = self.model(image).to(self.device)
         self.model.train()
         return reconstructed_image
 
     def plot_losses(self):
         fig = plt.figure(figsize=(10,4))
-        plt.plot(self.losses, label='Loss')
-        plt.xlabel('Iterations')
+        plt.plot(self.losses, label='Training Loss', c='b')
+        if self.val_loader:
+            plt.plot(self.val_losses, label='Validation Loss', c='r')
+        plt.yscale('log')
+        plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.legend()
         plt.tight_layout()
@@ -333,10 +353,18 @@ class VAEStepByStep(StepByStep):
             return loss.item(), reconstruction_loss.item(), kld.item()
         return perform_train_step_fn
 
+    def _make_val_step_fn(self):
+        def perform_test_step_fn(image: torch.Tensor):
+            self.model.eval()
+            reconstructed_image, mean, log_var = self.model(image)
+            loss, reconstruction_loss, kld = self.loss_fn(reconstructed_image, image, mean, log_var)
+            return loss.item(), reconstruction_loss.item(), kld.item()
+        return perform_test_step_fn
+
     def _mini_batch(self, validation = False):
         if validation:
-            data_loader = self.test_loader
-            step_fn = self.test_step_fn
+            data_loader = self.val_loader
+            step_fn = self.val_step_fn
         else:
             data_loader=self.train_loader
             step_fn=self.train_step_fn
@@ -355,12 +383,16 @@ class VAEStepByStep(StepByStep):
         return loss, reconstruction_loss, kld
 
     def train(self,n_epochs):
-        image, label = self.test_loader.dataset.__getitem__(0)
+        image, label = self.val_loader.dataset.__getitem__(0)
         image=image.unsqueeze(0)
         for epoch in range(n_epochs):
             self.total_epochs += 1
             loss, reconstruction_loss, kld = self._mini_batch()
             self.losses.append(loss)
+
+            with torch.no_grad():
+                val_loss,_,_ = self._mini_batch(validation = True)
+                self.val_losses.append(val_loss)
 
             if self.writer is not None:
                 self.writer.add_scalar('Loss/train', loss.item(), epoch)

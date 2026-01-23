@@ -3,7 +3,7 @@ from StepByStep import VAEStepByStep
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-filename = 'checkpoints\\model_17122925'
+filename = 'checkpoints\\model_23012026'
 
 config = VAEConfig(latent_dim=64)
 model = VAE(config)
@@ -16,7 +16,7 @@ train_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\
 test_data_folder = 'D:\\Rozhkova\\Projects\\DL\\data\\mvtec_anomaly_detection\\screw\\test'
 sbs.prepare_data(train_data_folder, test_data_folder, batch_size=32)
 
-images_batch, labels_batch = next(iter(sbs.test_loader))
+images_batch, labels_batch = next(iter(sbs.val_loader))
 layers_to_featurize = ['encoder.conv1','encoder.conv2','encoder.conv3', 'encoder.conv4',
                        'encoder.mean_layer', 'encoder.log_var_layer',
                   'decoder.conv1','decoder.conv2','decoder.conv3','decoder.conv4', 'decoder.unflat']
@@ -24,8 +24,11 @@ sbs.attach_hooks(layers_to_featurize)
 logits = sbs.predict(images_batch)
 sbs.remove_hooks()
 
+image=images_batch[0].unsqueeze(0)
 
+sbs.model.plot_latent_statistics(image)
 # print(sbs.visualization['encoder.conv1'])
+
 means, stds =sbs.statistic_per_channel(sbs.visualization['encoder.conv4'])
 # for layer in layers_to_featurize:
 #     fig = sbs.visualize_outputs([layer],n_images=5)
