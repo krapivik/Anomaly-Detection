@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-
+import math
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
+from mpmath.math2 import sqrt2
 from torchsummary import summary
 
 @dataclass
@@ -150,11 +152,42 @@ class VAE(nn.Module):
         image = image_tensor.detach().cpu().numpy()
         return image
 
-    def plot_latent_statistics(self, image):
+    def predict(self, image):
+        '''
+        Для анализа латентного пространства
+        '''
         with torch.no_grad():
-            encoded = self.encoder(image)
+            mean, log_var = self.encoder(image)
+            z = VAE.reparametrisation(mean, log_var)
+            reconstructed_image = self.decoder(z)
+        return z, reconstructed_image
 
-        pass
+    def plot_latent_statistics(self, image_batch):
+        with torch.no_grad():
+            z, reconstructed_image = self.predict(image_batch)
+            z = z.detach().cpu().numpy().squeeze()
+            n=image_batch.shape[0]
+            if (n**0.5%1)!=0:
+                m = int(math.sqrt(n*2))
+                fig, axs = plt.subplots(m, m)
+                j=0
+                for i, ax in enumerate(axs.flat):
+                   if i%2==0:
+                        ax.imshow(image_batch.detach().cpu().numpy().squeeze()[j], cmap='gray')
+                   else:
+                       ax.hist(z[j], bins=30, color='skyblue', edgecolor='black')
+                       j=j+1
+            else:
+                m = int(math.sqrt(n))
+                fig, axs = plt.subplots(m, 2*m)
+                j=0
+                for i, ax in enumerate(axs.flat):
+                    if i % 2 == 0:
+                        ax.imshow(image_batch.detach().cpu().numpy().squeeze()[j], cmap='gray')
+                    else:
+                        ax.hist(z[j], bins=30, color='skyblue', edgecolor='black')
+                        j = j + 1
+            plt.show()
 
 class KLDLoss(nn.Module):
     def __init__(self):
