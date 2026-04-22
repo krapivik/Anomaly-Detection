@@ -13,7 +13,6 @@ import numpy as np
 from Autoencoder import Autoencoder
 from UNET import UNETautoencoder
 from StepByStep import StepByStep
-from imageprocess import tensor_imshow
 
 latent_size=128
 model = Autoencoder(input_size=1,latent_size=latent_size)

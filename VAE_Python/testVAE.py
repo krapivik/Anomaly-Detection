@@ -26,7 +26,7 @@ sbs.remove_hooks()
 
 image=images_batch[0].unsqueeze(0)
 
-sbs.model.plot_latent_statistics(image)
+sbs.model.plot_latent_statistics(images_batch)
 # print(sbs.visualization['encoder.conv1'])
 
 means, stds =sbs.statistic_per_channel(sbs.visualization['encoder.conv4'])
