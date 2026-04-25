@@ -1,0 +1,51 @@
+C:\Users\rozhkova_as\AppData\Local\Python\pythoncore-3.14-64\python.exe D:\Rozhkova\Projects\DL\VAE_Python\VAE.py
+=== ИНФОРМАЦИЯ О СЕТИ ===
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Conv2d-1          [-1, 8, 128, 128]              80
+       BatchNorm2d-2          [-1, 8, 128, 128]              16
+              ReLU-3          [-1, 8, 128, 128]               0
+         MaxPool2d-4            [-1, 8, 64, 64]               0
+            Conv2d-5           [-1, 16, 64, 64]           1,168
+       BatchNorm2d-6           [-1, 16, 64, 64]              32
+              ReLU-7           [-1, 16, 64, 64]               0
+         MaxPool2d-8           [-1, 16, 32, 32]               0
+            Conv2d-9           [-1, 32, 32, 32]           4,640
+      BatchNorm2d-10           [-1, 32, 32, 32]              64
+             ReLU-11           [-1, 32, 32, 32]               0
+        MaxPool2d-12           [-1, 32, 16, 16]               0
+           Conv2d-13           [-1, 64, 16, 16]          18,496
+             ReLU-14           [-1, 64, 16, 16]               0
+        MaxPool2d-15             [-1, 64, 8, 8]               0
+          Flatten-16                 [-1, 4096]               0
+           Linear-17                  [-1, 128]         524,416
+           Linear-18                  [-1, 128]         524,416
+          Encoder-19     [[-1, 128], [-1, 128]]               0
+           Linear-20                 [-1, 4096]         528,384
+        Unflatten-21             [-1, 64, 8, 8]               0
+  ConvTranspose2d-22           [-1, 32, 16, 16]           8,224
+           Conv2d-23           [-1, 32, 16, 16]           9,248
+             ReLU-24           [-1, 32, 16, 16]               0
+  ConvTranspose2d-25           [-1, 16, 32, 32]           2,064
+           Conv2d-26           [-1, 16, 32, 32]           2,320
+             ReLU-27           [-1, 16, 32, 32]               0
+  ConvTranspose2d-28            [-1, 8, 64, 64]             520
+           Conv2d-29            [-1, 8, 64, 64]             584
+             ReLU-30            [-1, 8, 64, 64]               0
+  ConvTranspose2d-31          [-1, 1, 128, 128]              33
+           Conv2d-32          [-1, 1, 128, 128]              10
+          Sigmoid-33          [-1, 1, 128, 128]               0
+          Decoder-34          [-1, 1, 128, 128]               0
+================================================================
+Total params: 1,624,715
+Trainable params: 1,624,715
+Non-trainable params: 0
+----------------------------------------------------------------
+Input size (MB): 0.06
+Forward/backward pass size (MB): 7.75
+Params size (MB): 6.20
+Estimated Total Size (MB): 14.01
+----------------------------------------------------------------
+
+Process finished with exit code 0
