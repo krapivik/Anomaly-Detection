@@ -385,6 +385,8 @@ class VAEStepByStep(StepByStep):
     def train(self,n_epochs):
         image, label = self.val_loader.dataset.__getitem__(0)
         image=image.unsqueeze(0)
+        image=image.to(self.device)
+        
         for epoch in range(n_epochs):
             self.total_epochs += 1
             loss, reconstruction_loss, kld = self._mini_batch()
@@ -399,8 +401,9 @@ class VAEStepByStep(StepByStep):
                 self.writer.add_scalar('Reconstruction Loss/train', reconstruction_loss.item(), epoch)
                 self.writer.add_scalar('KL Divergence/train', kld.item(), epoch)
 
-                reconstructed_image = self.predict(image).squeeze(0)
-                self.writer.add_image(f'Images/test_image', reconstructed_image, epoch)
+                with torch.no_grad():
+                    reconstructed_image = self.predict(image).squeeze(0)
+                    self.writer.add_image(f'Images/test_image', reconstructed_image, epoch)
 
                 for name,param in self.model.named_parameters():
                     self.writer.add_histogram(f'Parameters/{name}', param.data, epoch)
